@@ -1,6 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const logger = require('./middleware/logger');
+const morgan = require('morgan');
 
 
 //Route files
@@ -12,7 +12,11 @@ dotenv.config({path: './config/config.env'});
 
 const app = express();
 
-app.use(logger);
+
+//Dev logging middleware
+if(process.env.NODE_ENV === 'development'){     //run only in development
+    app.use(morgan('dev'));
+}
 
 
 //Mount routers
