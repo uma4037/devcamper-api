@@ -20,6 +20,18 @@ const bootcamps = require('./routes/bootcamps')
 const app = express();
 
 
+//Body Parser
+//For Express version >= 4.16.0 body-parser comes with express
+app.use(express.json());
+app.use(express.urlencoded({
+  extended: true
+}));
+
+//For Express version less than 4.16.0
+//app.use(bodyParser.urlencoded({extended: true}));
+//app.use(bodyParser.json());
+
+
 //Dev logging middleware
 if(process.env.NODE_ENV === 'development'){     //run only in development
     app.use(morgan('dev'));
