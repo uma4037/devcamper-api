@@ -3,7 +3,7 @@ const slugify = require('slugify');
 const geocoder = require('../utils/geocoder');
 const { deleteMany } = require('./Course');
 
-const BootcampSchema = mongoose.Schema({
+const BootcampSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Please add a name'],
