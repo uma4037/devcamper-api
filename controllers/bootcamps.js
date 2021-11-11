@@ -8,10 +8,10 @@ const Bootcamp = require('../models/Bootcamp');
 //@desc      Get all bootcamps
 //@route     GET /api/v1/bootcamps
 //@access    Public
-exports.getBootcamps = asyncHandler( async (req, res, next) => {
-        //console.log(req.query);
+exports.getBootcamps = asyncHandler(async (req, res, next) => {
+    //console.log(req.query);
 
-        res.status(200).json(res.advancedResults);
+    res.status(200).json(res.advancedResults);
 
 });
 
@@ -19,17 +19,17 @@ exports.getBootcamps = asyncHandler( async (req, res, next) => {
 //@desc      Get single bootcamp
 //@route     GET /api/v1/bootcamps/:id
 //@access    Public
-exports.getBootcamp = asyncHandler( async (req, res, next) => {
+exports.getBootcamp = asyncHandler(async (req, res, next) => {
 
-        const bootcamp = await Bootcamp.findById(req.params.id);
+    const bootcamp = await Bootcamp.findById(req.params.id);
 
-        if (!bootcamp) {
-            return next(
-                new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
-            );
-        }
+    if (!bootcamp) {
+        return next(
+            new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
+        );
+    }
 
-        res.status(200).json({ success: true, data: bootcamp });
+    res.status(200).json({ success: true, data: bootcamp });
 
 });
 
@@ -37,15 +37,32 @@ exports.getBootcamp = asyncHandler( async (req, res, next) => {
 //@desc      Create new bootcamp
 //@route     POST /api/v1/bootcamps
 //@access    Private
-exports.createBootcamp = asyncHandler( async (req, res, next) => {
+exports.createBootcamp = asyncHandler(async (req, res, next) => {
     //console.log(req.body);
 
-        const bootcamp = await Bootcamp.create(req.body);
+    //Add user to req.body
+    req.body.user = req.user.id;
 
-        res.status(201).json({
-            success: true,
-            data: bootcamp
-        });
+    //Check for published bootcamp
+    const publishedBootcamp = await Bootcamp.findOne({ user: req.user.id });
+
+    //If the user is not admin, they can only add one bootcamp
+    if (publishedBootcamp && req.user.role !== 'admin') {
+        return next(
+            new ErrorResponse(
+                `The user with the id ${req.user.id} has already published a bootcamp`,
+                400
+            )
+        );
+    }
+
+
+    const bootcamp = await Bootcamp.create(req.body);
+
+    res.status(201).json({
+        success: true,
+        data: bootcamp
+    });
 
 });
 
@@ -53,20 +70,20 @@ exports.createBootcamp = asyncHandler( async (req, res, next) => {
 //@desc      Update bootcamp
 //@route     PUT /api/v1/bootcamps/:id
 //@access    Private
-exports.updateBootcamp = asyncHandler( async (req, res, next) => {
+exports.updateBootcamp = asyncHandler(async (req, res, next) => {
 
-        const bootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
+    const bootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+    });
 
-        if (!bootcamp) {
-            return next(
-                new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
-            );
-        }
+    if (!bootcamp) {
+        return next(
+            new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
+        );
+    }
 
-        res.status(200).json({ success: true, data: bootcamp });
+    res.status(200).json({ success: true, data: bootcamp });
 
 });
 
@@ -74,20 +91,20 @@ exports.updateBootcamp = asyncHandler( async (req, res, next) => {
 //@desc      Delete bootcamp
 //@route     DELETE /api/v1/bootcamps/:id
 //@access    Private
-exports.deleteBootcamp = asyncHandler( async (req, res, next) => {
+exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
 
-        // const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id);        won't trigger pre('remove') middleware
-        const bootcamp = await Bootcamp.findById(req.params.id);
+    // const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id);        won't trigger pre('remove') middleware
+    const bootcamp = await Bootcamp.findById(req.params.id);
 
-        if (!bootcamp) {
-            return next(
-                new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
-            );
-        }
+    if (!bootcamp) {
+        return next(
+            new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
+        );
+    }
 
-        bootcamp.remove();  // So that pre('remove') middleware works which won't work in case of findByIdAndDelete()
+    bootcamp.remove();  // So that pre('remove') middleware works which won't work in case of findByIdAndDelete()
 
-        res.status(200).json({ success: true, data: {} });
+    res.status(200).json({ success: true, data: {} });
 
 });
 
@@ -95,9 +112,9 @@ exports.deleteBootcamp = asyncHandler( async (req, res, next) => {
 //@desc      Get bootcamps within a radius
 //@route     DELETE /api/v1/bootcamps/radius/:zipcode/:distance
 //@access    Private
-exports.getBootcampInRadius = asyncHandler( async (req, res, next) => {
+exports.getBootcampInRadius = asyncHandler(async (req, res, next) => {
 
-    const {zipcode, distance} = req.params;
+    const { zipcode, distance } = req.params;
 
     //Get lat/lng from geocode
     const loc = await geocoder.geocode(zipcode);
@@ -107,12 +124,12 @@ exports.getBootcampInRadius = asyncHandler( async (req, res, next) => {
     //Calc radius using radians
     //Divide dist by radius of Earth
     //Earth radius = 3,963 miles/ 6,378 km
-    const radius = distance/3963;
+    const radius = distance / 3963;
 
     const bootcamps = await Bootcamp.find({
-        location:{
-            $geoWithin: { $centerSphere: [ [ lng, lat ], radius ] }
-         }
+        location: {
+            $geoWithin: { $centerSphere: [[lng, lat], radius] }
+        }
     });
 
     res.status(200).json({
@@ -127,7 +144,7 @@ exports.getBootcampInRadius = asyncHandler( async (req, res, next) => {
 //@desc      Upload photo for bootcamp
 //@route     PUT /api/v1/bootcamps/:id/photo
 //@access    Private
-exports.bootcampPhotoUpload = asyncHandler( async (req, res, next) => {
+exports.bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
 
     const bootcamp = await Bootcamp.findById(req.params.id);
 
@@ -146,7 +163,7 @@ exports.bootcampPhotoUpload = asyncHandler( async (req, res, next) => {
     const file = req.files.file;
 
     //Make sure the image is a photo
-    if(!file.mimetype.startsWith('image')){
+    if (!file.mimetype.startsWith('image')) {
         return next(
             new ErrorResponse(`Please upload an image file`, 400)
         );
@@ -154,7 +171,7 @@ exports.bootcampPhotoUpload = asyncHandler( async (req, res, next) => {
 
 
     //Check filesize
-    if(file.size > process.env.MAX_FILE_UPLOAD){
+    if (file.size > process.env.MAX_FILE_UPLOAD) {
         return next(
             new ErrorResponse(`Please upload an image less 
             than ${process.env.MAX_FILE_UPLOAD}`, 400)
@@ -172,7 +189,7 @@ exports.bootcampPhotoUpload = asyncHandler( async (req, res, next) => {
 
 
     file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async err => {
-        if(err){
+        if (err) {
             console.err(err);
 
             return next(
@@ -189,5 +206,5 @@ exports.bootcampPhotoUpload = asyncHandler( async (req, res, next) => {
             data: file.name
         });
     });
-    
+
 });
